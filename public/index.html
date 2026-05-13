@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Godot Dev Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Godot Dev Assistant</h1>
+  </header>
+
+  <main>
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" role="tablist">
+      <button
+        id="tab-code-help"
+        class="tab-btn active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-code-help"
+      >
+        Code Help
+      </button>
+      <button
+        id="tab-pixel-art"
+        class="tab-btn"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-pixel-art"
+      >
+        Pixel Art
+      </button>
+    </nav>
+
+    <!-- Code Help Panel -->
+    <section
+      id="panel-code-help"
+      class="tab-panel"
+      role="tabpanel"
+      aria-labelledby="tab-code-help"
+    >
+      <h2>Code Help</h2>
+      <form id="form-code-help" novalidate>
+        <div class="field-group">
+          <label for="code-input">GDScript Code</label>
+          <textarea
+            id="code-input"
+            name="code"
+            rows="10"
+            placeholder="Paste your GDScript code here..."
+            aria-required="true"
+          ></textarea>
+        </div>
+
+        <div class="field-group">
+          <label for="code-question">Your Question</label>
+          <input
+            type="text"
+            id="code-question"
+            name="question"
+            placeholder="What would you like to know about this code?"
+            aria-required="true"
+          />
+        </div>
+
+        <div
+          id="code-help-error"
+          class="error-message"
+          role="alert"
+          aria-live="polite"
+        ></div>
+
+        <button type="submit" id="submit-code-help" class="submit-btn">
+          Get Code Help
+        </button>
+      </form>
+    </section>
+
+    <!-- Pixel Art Panel (hidden by default) -->
+    <section
+      id="panel-pixel-art"
+      class="tab-panel"
+      role="tabpanel"
+      aria-labelledby="tab-pixel-art"
+      style="display: none;"
+    >
+      <h2>Pixel Art Feedback</h2>
+      <form id="form-pixel-art" novalidate>
+        <div class="field-group">
+          <label for="image-input">Upload Pixel Art Image</label>
+          <input
+            type="file"
+            id="image-input"
+            name="image"
+            accept="image/*"
+            aria-required="true"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="pixel-question">Your Question</label>
+          <input
+            type="text"
+            id="pixel-question"
+            name="question"
+            placeholder="What feedback are you looking for?"
+            aria-required="true"
+          />
+        </div>
+
+        <div
+          id="pixel-art-error"
+          class="error-message"
+          role="alert"
+          aria-live="polite"
+        ></div>
+
+        <button type="submit" id="submit-pixel-art" class="submit-btn">
+          Get Pixel Art Feedback
+        </button>
+      </form>
+    </section>
+
+    <!-- Loading Indicator -->
+    <div id="loading" style="display: none;" aria-live="polite" aria-label="Loading response">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>Thinking...</span>
+    </div>
+
+    <!-- Shared Response Output -->
+    <div id="response-output" aria-live="polite" aria-label="AI response"></div>
+  </main>
+
+  <!-- marked.js CDN for markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
