@@ -16,11 +16,13 @@ Godot Dev Assistant is a web application that gives Godot game developers on-dem
 
 Godot's documentation is thorough but dense, and developers often need contextual guidance rather than raw reference material. Searching forums or reading through long threads is slow. This tool shortens that loop: a developer pastes their actual code or uploads their actual asset and gets targeted, actionable feedback in seconds.
 
-This tool is mainly for Godot beginners and seasoned developers as well. With the help of this AI tool, solo game developers can easily make their own game!
+This tool is mainly for Godot beginners and seasoned developers as well. With the help of this AI tool, solo game developers can easily make their own game! I myself will be using it for my upcoming game called bondweaver!
 
 ### What's hard about getting the AI behavior right
 
 Getting the model to give consistently useful advice is harder than it looks. The main challenges are: (1) Godot 4 and Godot 3 have different APIs — the model sometimes gives Godot 3 answers (e.g. `KinematicBody2D` instead of `CharacterBody2D`) even when the user is clearly on Godot 4; (2) in multi-turn conversations, the model can drift and forget the original code context after several exchanges; (3) the "Games That Use This Pattern" section requires the model to make accurate real-world connections — it occasionally names games that don't actually use the pattern described; (4) pixel art feedback quality varies heavily depending on image resolution and subject matter, making keyword-based scoring an imperfect proxy for actual usefulness.
+
+Since Godot is a fairly new open-source game engine, it is still updating and with that some function calls and syntax are either removed or modified.
 
 ---
 
@@ -81,6 +83,8 @@ A user opens the Code Help tab, pastes a GDScript `CharacterBody2D` movement scr
 ## AI Disclosure & Safety
 
 ### How I used Kiro
+
+It is my first time using an AI CLI and it blew my mind, with this I can expand the website as much as I want as I will be working as a solo developer.
 
 I used Kiro (an AI coding assistant) throughout this project to scaffold boilerplate, debug issues, and implement features. Three specific moments where it failed and how I recovered:
 
