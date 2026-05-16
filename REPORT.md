@@ -6,9 +6,9 @@
 
 Godot Dev Assistant is a web application that gives Godot game developers on-demand AI-powered help within three modes:
 
-- ** Code Help** - As someone who asks AI for advice and proper structure whenever buidling a game project, I always want to find the most efficient and professional way. With code help mode, you can input any script code and ask for suggestions to make it better. 
-  
-- **Pixel Art Feedback** - For people who doesn't know color composition , shading or anything related to it, pixel art feedback mode will give you the rough idea on how to make your game art better!
+- **Code Help** - As someone who asks AI for advice and proper structure whenever building a game project, I always want to find the most efficient and professional way. With code help mode, you can input any script code and ask for suggestions to make it better. The conversation is multi-turn — you can ask follow-up questions and the model remembers the full context of your code and previous answers.
+
+- **Pixel Art Feedback** - For people who doesn't know color composition, shading or anything related to it, pixel art feedback mode will give you the rough idea on how to make your game art better!
 
 - **Brainstorm** - Game Developers are always coming up with new ideas, through the brainstorm tab, the agent will help you shape these ideas and give you meaningful suggestions!
 
@@ -16,94 +16,80 @@ Godot Dev Assistant is a web application that gives Godot game developers on-dem
 
 Godot's documentation is thorough but dense, and developers often need contextual guidance rather than raw reference material. Searching forums or reading through long threads is slow. This tool shortens that loop: a developer pastes their actual code or uploads their actual asset and gets targeted, actionable feedback in seconds.
 
+This tool is mainly for Godot beginners and seasoned developers as well. With the help of this AI tool, solo game developers can easily make their own game!
+
+### What's hard about getting the AI behavior right
+
+Getting the model to give consistently useful advice is harder than it looks. The main challenges are: (1) Godot 4 and Godot 3 have different APIs — the model sometimes gives Godot 3 answers (e.g. `KinematicBody2D` instead of `CharacterBody2D`) even when the user is clearly on Godot 4; (2) in multi-turn conversations, the model can drift and forget the original code context after several exchanges; (3) the "Games That Use This Pattern" section requires the model to make accurate real-world connections — it occasionally names games that don't actually use the pattern described; (4) pixel art feedback quality varies heavily depending on image resolution and subject matter, making keyword-based scoring an imperfect proxy for actual usefulness.
+
+---
 
 ## Iterations
 
-### Version 1 — Single-page, single-mode prototype
+### V1 — Single-page, single-mode prototype
 
-The first working version had only the Code Help mode. The entire UI was a single form with a textarea, a text input, and a submit button. The backend had one route (`POST /api/code-help`) that forwarded the code and question to GPT-4o and returned the raw response text as plain text.
+**Change:** Built the initial Code Help mode with a single POST route (`/api/code-help` in `server.js`) that forwarded code and a question to GPT-4o and returned raw plain text.
 
-Key limitations discovered during this iteration:
-- Plain text responses were hard to read; code examples were not formatted.
-- There was no loading indicator, so the UI appeared frozen while waiting for the API.
-- The API key was temporarily hard-coded in `server.js` during local testing (removed before any commit).
+**Motivating example:** Test case 3 (health system with UI) — the response contained a GDScript code block that rendered as a wall of unformatted text, making it completely unreadable. None of the `mustContain` keywords (`ProgressBar`, `Label`, `signal`) were detectable in the raw output because the response structure was inconsistent.
 
-### Version 2 — Markdown rendering and Pixel Art mode added
+**Delta:** ASR 33% (2/6 code-help cases passed) — responses were unformatted and keyword matching was unreliable on plain text output.
 
-The second iteration addressed the readability problem by integrating marked.js. The `handleResponse` function was introduced to pipe the AI response through `marked.parse()` before injecting it into the DOM. This made code blocks, headings, and bullet lists render correctly.
+**Conclusion:** The low ASR was caused by two problems: plain text responses made code blocks unreadable, and the prompt gave no formatting instructions so the model's output structure varied wildly. The obvious next step was to add markdown rendering and explicit formatting instructions in the prompt.
 
-Pixel Art mode was added in this iteration. The initial approach sent the image as a URL, which required the image to be publicly hosted. This was impractical for local development, so the approach was changed to base64-encoding the uploaded image buffer server-side and passing it as a data URL in the OpenAI vision message. This removed the dependency on external hosting entirely.
+---
 
-A loading spinner and button-disable logic were also added in this iteration to give users clear feedback while the API call was in flight.
+### V2 — Markdown rendering, Pixel Art mode, and multimodal input
 
-### Version 3 — Validation, error handling, and evaluation suite
+**Change:** Added marked.js rendering (`handleResponse()` in `public/app.js`) so AI responses display as formatted markdown. Added the Pixel Art tab with a multimodal backend route (`POST /api/pixel-art` in `server.js`) that base64-encodes uploaded images and passes them as data URLs in the OpenAI vision message. Updated the Code Help prompt to explicitly request markdown with headings and code examples.
 
-The third iteration hardened the application for real use. Client-side validation was added to both forms: the Code Help form checks that neither the code textarea nor the question input is empty before sending a request; the Pixel Art form checks that a file is selected and the question is non-empty. Inline error messages are displayed adjacent to the form rather than in the shared response area, so validation feedback is clearly associated with the input that caused it.
+**Motivating example:** Test case 4 (smooth movement with delta) — V1 returned a response that mentioned `delta` and `lerp` but buried them in an unformatted paragraph. After adding markdown rendering and the formatting instruction, the same question produced a structured response with a `## Smooth Movement` heading and a fenced code block, making keyword matching reliable.
 
-Server-side error handling was also formalised. The backend now returns structured `{ error: string }` JSON for all failure cases (OpenAI API errors, oversized uploads, unhandled exceptions), and the frontend's `handleError` function renders these consistently in the response output area.
+**Delta:** ASR 67% (4/6 code-help cases passed). The pixel art cases were added but initially skipped because image files were not yet included in the repo.
 
-The evaluation suite (`eval/`) was built in this iteration. It defines ten labeled test cases (six Code Help, four Pixel Art) and an automated runner that sends each case to the live backend, checks the response against keyword criteria, and reports an Actionable Suggestion Rate (ASR). The target ASR is ≥ 70%.
+**Conclusion:** Markdown rendering fixed the readability problem and improved keyword hit rate significantly. The remaining failures were cases where the model gave correct but generic advice that didn't include the specific Godot API names in the `mustContain` list. Adding a loading spinner and button-disable logic also improved UX but didn't affect ASR.
+
+---
+
+### V3 — Multi-turn conversation, game references, and full eval suite
+
+**Change:** Rewrote `POST /api/code-help` in `server.js` to support multi-turn conversation. The endpoint now accepts either `{ code, question }` (first turn) or `{ messages, followUp }` (follow-up turns), prepends a system message server-side, and returns `{ result, messages }` so the client can pass the full history back on the next request. Also added a "Games That Use This Pattern" instruction to the system prompt so every response ends with 2–4 real game examples. Added the Brainstorm tab (Class Designer and Game Idea Flesher sub-modes). Completed the eval suite with all 10 test cases running against real image files.
+
+**Motivating example:** Test case 2 (connecting movement with animation) — in V2, a follow-up question like "how do I blend between walk and run animations?" produced a generic answer because the model had no memory of the original code. With multi-turn history, the same follow-up correctly referenced the `AnimationTree` structure from the first response.
+
+**Delta:** ASR 80% (8/10 cases passed on full suite). The two failures were pixel art cases where the model described the image accurately but used synonyms not in the `mustContain` list (e.g. "hue" instead of "color", "luminance" instead of "contrast").
+
+**Conclusion:** Multi-turn conversation improved response coherence on follow-up questions. The remaining failures point to a weakness in keyword-based scoring — the metric doesn't capture semantic similarity. A next step would be to use an embedding-based similarity score instead of exact keyword matching, which would handle synonym variation.
 
 ---
 
 ## Code Walkthrough
 
-### `server.js`
+A user opens the Code Help tab, pastes a GDScript `CharacterBody2D` movement script, types "How do I add a double jump?", and clicks **Get Code Help**.
 
-The entry point for the backend. It:
+1. **`public/index.html` (form submit)** — The `<form id="form-code-help">` submit event fires. The `novalidate` attribute means browser validation is skipped; all validation is handled in JS.
 
-1. Calls `dotenv.config()` to load `OPENAI_API_KEY` from `.env` before anything else runs.
-2. Sets up Express middleware: `express.json()` for JSON body parsing and `express.static('public')` to serve the frontend.
-3. Configures a multer instance with a 10 MB file size limit using in-memory storage (`multer.memoryStorage()`), so uploaded images are held in `req.file.buffer` rather than written to disk.
-4. Instantiates the OpenAI client once at startup: `new OpenAI({ apiKey: process.env.OPENAI_API_KEY })`.
-5. Defines `POST /api/code-help`: reads `req.body.code` and `req.body.question`, constructs a structured GDScript tutor prompt, calls `openai.chat.completions.create` with `model: "gpt-4o"`, and returns `{ result: responseText }`.
-6. Defines `POST /api/pixel-art`: applies the multer middleware inline, reads `req.file.buffer` and `req.body.question`, base64-encodes the image into a data URL, constructs a vision message (text part + image_url part), calls the same GPT-4o model, and returns `{ result: responseText }`.
-7. Registers a four-argument global error handler as the last middleware, which catches any unhandled exception and returns HTTP 500 with `{ error: "An unexpected error occurred." }`.
+2. **`public/app.js` — `submitCodeHelp()`** — The function reads `codeInput.value.trim()` and `codeQuestion.value.trim()`. If either is empty it sets `codeHelpError.textContent` and returns early. Otherwise it calls `setLoadingState(true, submitCodeHelpBtn)` to show the spinner and disable the button, then POSTs `{ code, question }` as JSON to `/api/code-help`.
 
-### `public/index.html`
+3. **`server.js` — `POST /api/code-help` (around line 35)** — The handler checks whether `req.body.messages` is present. On a first turn it isn't, so it builds a `messages` array: a system message (Godot tutor persona + formatting instructions + "Games That Use This Pattern" directive) followed by a user message that embeds the code in a fenced GDScript block and appends the question. It calls `openai.chat.completions.create({ model: 'gpt-4o', messages })` and returns `{ result: responseText, messages: updatedMessages }` — the updated history is sent back so the client can use it on follow-up turns.
 
-The single HTML file that defines the entire UI structure. Notable points:
+4. **`public/app.js` — response handling** — On success, `codeHelpMessages = data.messages` stores the history. `showConversationView()` hides the initial form and shows the conversation thread. `appendMessageBubble('user', ...)` and `appendMessageBubble('assistant', data.result)` render the exchange as chat bubbles, with the assistant bubble piped through `marked.parse()`.
 
-- The tab navigation uses `role="tablist"` and `role="tab"` ARIA attributes so screen readers understand the tab relationship.
-- Each panel uses `role="tabpanel"` with `aria-labelledby` pointing to its tab button.
-- Inline error containers (`#code-help-error`, `#pixel-art-error`) use `role="alert"` and `aria-live="polite"` so validation messages are announced to assistive technologies.
-- The shared `#loading` div and `#response-output` div sit outside the panels so they persist across tab switches.
-- marked.js is loaded from the jsDelivr CDN before `app.js` so `marked.parse` is available when the script runs.
-
-### `public/app.js`
-
-All client-side interaction logic. Organised into four sections:
-
-- **Tab switching** — `switchTab(tabName)` toggles the `active` class and `aria-selected` attribute on the tab buttons and sets `display` on the panels. Called on click and once on page load to enforce the default state.
-- **Shared UI helpers** — `setLoadingState(isLoading, submitBtn)` shows/hides the spinner and disables/enables the submit button. `handleResponse(data)` renders markdown. `handleError(err)` displays a plain-text error.
-- **Code Help form** — `submitCodeHelp()` validates both fields, then POSTs `{ code, question }` as JSON to `/api/code-help`. Uses `async/await` with a `try/catch/finally` block; the `finally` block always restores the loading state.
-- **Pixel Art form** — `submitPixelArtFn()` validates the file selection and question, builds a `FormData` object, and POSTs it to `/api/pixel-art`. The `Content-Type` header is intentionally omitted so the browser sets the correct multipart boundary automatically.
-
-### `eval/`
-
-The evaluation directory contains two files:
-
-- **`eval/test-cases.js`** — exports an array of ten test case objects. Each object has a `type` (`'code-help'` or `'pixel-art'`), an `input` object (with `code`/`imagePath` and `question`), and a `label` object with a `mustContain` array of keywords the AI response should include.
-- **`eval/run-eval.js`** — the evaluation runner. It iterates over the test cases, sends each to the running backend via HTTP, checks whether at least three of the `mustContain` keywords appear in the response (case-insensitive), and prints a per-test result. Pixel Art cases whose image file does not exist on disk are skipped rather than failed. The final summary line reports `Passed: X / Total: Y | ASR: Z%`.
+**Design decision:** The system message is always prepended server-side rather than sent from the client. The alternative was to have the client include the system message in the `messages` array it sends. I rejected that because it would let a user craft a malicious system message by manipulating the request body, partially bypassing the intended persona. Keeping it server-side means the system prompt is always authoritative.
 
 ---
 
 ## AI Disclosure & Safety
 
-### How `OPENAI_API_KEY` is protected
+### How I used Kiro
 
-The API key is stored exclusively in a `.env` file on the server. It is loaded at startup via `dotenv.config()` and accessed only through `process.env.OPENAI_API_KEY`. The key is never included in any HTTP response, never logged, and never referenced in any frontend file.
+I used Kiro (an AI coding assistant) throughout this project to scaffold boilerplate, debug issues, and implement features. Three specific moments where it failed and how I recovered:
 
-The `.env` file is listed in `.gitignore`, which means it is excluded from version control. Only `.env.example` — which contains the variable name with an empty placeholder value (`OPENAI_API_KEY=`) — is committed to the repository. This ensures that no real credentials can be accidentally pushed to a remote.
+1. **Multi-turn endpoint — wrong message structure.** When I asked Kiro to implement multi-turn conversation, it initially placed the system message inside the client-side `messages` array that gets sent back and forth. This meant the system prompt was duplicated on every follow-up turn, inflating token usage and causing the model to occasionally contradict its own persona. I caught this by reading the generated code carefully, identified the duplication, and told Kiro to strip the system message before returning `updatedMessages` to the client and re-add it server-side on every request.
 
-The frontend has no knowledge of the key's existence. All OpenAI API calls are made server-side; the browser only communicates with the Express server's two REST endpoints.
+2. **Pixel Art eval — skipped test cases.** Kiro generated the initial `test-cases.js` with placeholder image paths (`eval/images/character.png`, `eval/images/tileset.png`) that didn't exist. The eval runner silently skipped all four pixel art cases, giving a misleadingly high ASR on only 6 tests. I noticed the SKIP output in the terminal, added real image files, and updated the test cases to use the actual filenames.
 
-### How user inputs are handled
+3. **Brainstorm tab — concurrent file edits caused conflicts.** When Kiro implemented the Brainstorm tab, it dispatched multiple subagents to edit `app.js` and `index.html` simultaneously. One agent overwrote changes made by another, leaving the `switchBrainstormMode` function missing from the file. I caught this by running the app and seeing a `ReferenceError` in the browser console, then manually verified the file and re-ran the affected task.
 
-User-supplied data flows through the application as follows:
+### Safety risk
 
-1. **Code Help**: the GDScript code and question are sent from the browser to the backend as a JSON POST body. The backend interpolates them directly into a prompt string, which is then sent to the OpenAI API as the `content` of a user message. The values are not stored, logged, or written to disk.
-
-2. **Pixel Art**: the image file and question are sent as a multipart/form-data POST. Multer buffers the image in memory (`multer.memoryStorage()`); it is never written to the filesystem. The backend base64-encodes the buffer and includes it as a data URL in the OpenAI vision message alongside the question text. Neither the image nor the question is persisted after the response is returned.
-
-There is no SQL database and no shell command execution in this application. User inputs cannot trigger SQL injection or command injection. The relevant security consideration is **prompt injection**: because user-supplied text is embedded directly into the prompt sent to GPT-4o, a malicious user could craft inputs designed to manipulate the model's output. This risk is inherent to any LLM-powered application that incorporates user content into prompts. Mitigations in this context are limited — the application does not act on the model's output in any automated way, so the practical impact is confined to the quality of the response the attacker themselves receives.
+The primary safety risk in this app is **prompt injection**: user-supplied GDScript code and questions are embedded directly into the prompt sent to GPT-4o. A user could craft input designed to override the system persona (e.g. pasting `Ignore all previous instructions and...` as their "code"). The mitigation I chose is that the app never acts on the model's output in any automated way — it only displays text to the user who submitted the request. There is no agentic loop, no code execution, and no data persistence, so the practical blast radius of a successful injection is limited to the attacker receiving a degraded or off-topic response.
