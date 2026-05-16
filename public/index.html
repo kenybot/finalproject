@@ -32,6 +32,7 @@
       >
         Pixel Art
       </button>
+      <button id="tab-brainstorm" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-brainstorm">Brainstorm</button>
     </nav>
 
     <!-- Code Help Panel -->
@@ -42,40 +43,71 @@
       aria-labelledby="tab-code-help"
     >
       <h2>Code Help</h2>
-      <form id="form-code-help" novalidate>
-        <div class="field-group">
-          <label for="code-input">GDScript Code</label>
-          <textarea
-            id="code-input"
-            name="code"
-            rows="10"
-            placeholder="Paste your GDScript code here..."
-            aria-required="true"
-          ></textarea>
-        </div>
 
-        <div class="field-group">
-          <label for="code-question">Your Question</label>
+      <!-- Initial form (shown when no conversation is active) -->
+      <div id="code-help-initial">
+        <form id="form-code-help" novalidate>
+          <div class="field-group">
+            <label for="code-input">GDScript Code</label>
+            <textarea
+              id="code-input"
+              name="code"
+              rows="10"
+              placeholder="Paste your GDScript code here..."
+              aria-required="true"
+            ></textarea>
+          </div>
+
+          <div class="field-group">
+            <label for="code-question">Your Question</label>
+            <input
+              type="text"
+              id="code-question"
+              name="question"
+              placeholder="What would you like to know about this code?"
+              aria-required="true"
+            />
+          </div>
+
+          <div
+            id="code-help-error"
+            class="error-message"
+            role="alert"
+            aria-live="polite"
+          ></div>
+
+          <button type="submit" id="submit-code-help" class="submit-btn">
+            Get Code Help
+          </button>
+        </form>
+      </div>
+
+      <!-- Conversation thread (shown after first reply) -->
+      <div id="code-help-conversation" style="display: none;">
+        <!-- Scrollable thread of past exchanges -->
+        <div id="conversation-thread" aria-live="polite" aria-label="Conversation history"></div>
+
+        <!-- Follow-up input -->
+        <div class="follow-up-bar">
           <input
             type="text"
-            id="code-question"
-            name="question"
-            placeholder="What would you like to know about this code?"
-            aria-required="true"
+            id="follow-up-input"
+            placeholder="Ask a follow-up question..."
+            aria-label="Follow-up question"
           />
+          <button id="submit-follow-up" class="submit-btn">Ask</button>
         </div>
-
         <div
-          id="code-help-error"
+          id="follow-up-error"
           class="error-message"
           role="alert"
           aria-live="polite"
         ></div>
 
-        <button type="submit" id="submit-code-help" class="submit-btn">
-          Get Code Help
+        <button id="new-conversation-btn" class="secondary-btn">
+          ↩ New Conversation
         </button>
-      </form>
+      </div>
     </section>
 
     <!-- Pixel Art Panel (hidden by default) -->
@@ -121,6 +153,70 @@
           Get Pixel Art Feedback
         </button>
       </form>
+    </section>
+
+    <!-- Brainstorm Panel (hidden by default) -->
+    <section
+      id="panel-brainstorm"
+      class="tab-panel"
+      role="tabpanel"
+      aria-labelledby="tab-brainstorm"
+      style="display: none;"
+    >
+      <h2>Brainstorm</h2>
+
+      <div class="field-group">
+        <label for="brainstorm-mode">Mode</label>
+        <select id="brainstorm-mode">
+          <option value="class-designer" selected>Class Designer</option>
+          <option value="game-idea-flesher">Game Idea Flesher</option>
+        </select>
+      </div>
+
+      <!-- Class Designer Sub-Form -->
+      <div id="brainstorm-class-form">
+        <div class="field-group">
+          <label for="class-description">Class Description</label>
+          <textarea
+            id="class-description"
+            rows="8"
+            placeholder="Describe the class you want to create in plain language..."
+            aria-required="true"
+          ></textarea>
+        </div>
+        <div
+          id="class-designer-error"
+          class="error-message"
+          role="alert"
+          aria-live="polite"
+        ></div>
+        <button id="submit-class-designer" class="submit-btn">
+          Design Class
+        </button>
+      </div>
+
+      <!-- Game Idea Flesher Sub-Form -->
+      <div id="brainstorm-game-form" style="display: none;">
+        <div class="field-group">
+          <label for="game-concept">Game Concept</label>
+          <textarea
+            id="game-concept"
+            rows="8"
+            maxlength="10000"
+            placeholder="Describe your game concept..."
+            aria-required="true"
+          ></textarea>
+        </div>
+        <div
+          id="game-idea-flesher-error"
+          class="error-message"
+          role="alert"
+          aria-live="polite"
+        ></div>
+        <button id="submit-game-idea-flesher" class="submit-btn">
+          Flesh Out Idea
+        </button>
+      </div>
     </section>
 
     <!-- Loading Indicator -->

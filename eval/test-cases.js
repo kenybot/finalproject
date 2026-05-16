@@ -83,51 +83,48 @@ const testCases = [
   },
 
   // ─── Pixel Art Test Cases ─────────────────────────────────────────────────────
-  // Note: image files are placeholders under eval/images/.
-  // The eval runner skips a test and prints "SKIPPED — image not found"
-  // if the image file does not exist at the given path.
 
   {
     type: 'pixel-art',
     input: {
-      imagePath: 'eval/images/character.png',
-      question: 'My pixel art character looks flat and lacks depth',
+      imagePath: 'eval/images/duck.jpg',
+      question: 'How can I improve the shading and depth of this sprite?',
     },
     label: {
-      mustContain: ['shading', 'highlight', 'shadow', 'contrast', 'light', 'depth', 'palette'],
+      mustContain: ['shading', 'highlight', 'shadow', 'contrast', 'light', 'depth', 'color'],
     },
   },
 
   {
     type: 'pixel-art',
     input: {
-      imagePath: 'eval/images/tileset.png',
-      question: 'How can I improve my tileset readability?',
+      imagePath: 'eval/images/frog.jpg',
+      question: 'How do I make this character look more polished for a game?',
     },
     label: {
-      mustContain: ['outline', 'contrast', 'color', 'border', 'tile', 'readable', 'edge'],
+      mustContain: ['outline', 'detail', 'pixel', 'color', 'clean', 'sprite', 'palette'],
     },
   },
 
   {
     type: 'pixel-art',
     input: {
-      imagePath: 'eval/images/character.png',
-      question: 'How do I make my sprite look more polished?',
+      imagePath: 'eval/images/pikachu.jpg',
+      question: 'What improvements would make this sprite more readable at small sizes?',
     },
     label: {
-      mustContain: ['anti-alias', 'dither', 'outline', 'detail', 'pixel', 'clean', 'consistent'],
+      mustContain: ['outline', 'contrast', 'color', 'readable', 'small', 'pixel', 'detail'],
     },
   },
 
   {
     type: 'pixel-art',
     input: {
-      imagePath: 'eval/images/background.png',
-      question: 'My background feels too busy, how do I simplify it?',
+      imagePath: 'eval/images/watermelon.jpg',
+      question: 'How can I reduce the color palette while keeping this looking good?',
     },
     label: {
-      mustContain: ['palette', 'reduce', 'color', 'simplify', 'contrast', 'foreground', 'layer'],
+      mustContain: ['palette', 'reduce', 'color', 'dither', 'contrast', 'simplify', 'shade'],
     },
   },
 ];

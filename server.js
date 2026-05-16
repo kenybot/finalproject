@@ -28,31 +28,77 @@ const upload = multer({
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ── POST /api/code-help ───────────────────────────────────────────────────────
+//
+// Supports multi-turn conversation.
+//
+// Request body (first turn):
+//   { code: string, question: string }
+//
+// Request body (follow-up turns):
+//   { messages: Array<{ role: 'user'|'assistant', content: string }>, followUp: string }
+//
+// The system prompt is always prepended server-side so the client never needs
+// to manage it. On the first turn the code is embedded in the initial user
+// message; on follow-up turns the existing messages array is used as-is and
+// the new follow-up question is appended.
 
 app.post('/api/code-help', async (req, res, next) => {
   try {
-    const { code, question } = req.body;
+    const { code, question, messages: clientMessages, followUp } = req.body;
 
-    const prompt = `You are an expert Godot game developer and GDScript tutor.
-The developer has shared the following GDScript code:
+    const SYSTEM_MESSAGE = {
+      role: 'system',
+      content:
+        'You are an expert Godot game developer and GDScript tutor. ' +
+        'Provide structured advice focused on Godot game development patterns such as ' +
+        'state machines, animation trees, signals, and scene composition. ' +
+        'Format all responses as markdown with clear headings and code examples where relevant.',
+    };
+
+    let messages;
+
+    if (Array.isArray(clientMessages) && clientMessages.length > 0 && followUp) {
+      // ── Follow-up turn: use existing history + new question ────────────────
+      const trimmedFollowUp = followUp.trim();
+      if (!trimmedFollowUp) {
+        return res.status(400).json({ error: 'followUp is required' });
+      }
+      messages = [
+        SYSTEM_MESSAGE,
+        ...clientMessages,
+        { role: 'user', content: trimmedFollowUp },
+      ];
+    } else {
+      // ── First turn: embed the code and initial question ────────────────────
+      if (!code || !question) {
+        return res.status(400).json({ error: 'code and question are required' });
+      }
+      const firstUserMessage = `The developer has shared the following GDScript code:
 
 \`\`\`gdscript
 ${code}
 \`\`\`
 
-Their question is: ${question}
+Their question is: ${question}`;
 
-Provide structured advice focused on Godot game development patterns such as
-state machines, animation trees, signals, and scene composition.
-Format your response as markdown with clear headings and code examples where relevant.`;
+      messages = [SYSTEM_MESSAGE, { role: 'user', content: firstUserMessage }];
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
+      messages,
     });
 
     const responseText = completion.choices[0].message.content;
-    res.status(200).json({ result: responseText });
+
+    // Return the assistant reply plus the updated messages array so the client
+    // can pass it back on the next turn without re-sending the full code.
+    const updatedMessages = [
+      ...messages.slice(1), // strip the system message before sending to client
+      { role: 'assistant', content: responseText },
+    ];
+
+    res.status(200).json({ result: responseText, messages: updatedMessages });
   } catch (err) {
     const status = err.status || 500;
     res.status(status).json({ error: err.message });
@@ -107,6 +153,75 @@ app.post('/api/pixel-art', (req, res, next) => {
       res.status(status).json({ error: err.message });
     }
   });
+});
+
+// ── POST /api/class-designer ──────────────────────────────────────────────────
+
+app.post('/api/class-designer', async (req, res) => {
+  try {
+    const { description } = req.body;
+
+    if (!description || description.trim() === '') {
+      return res.status(400).json({ error: 'description is required' });
+    }
+
+    const prompt = `You are a Godot architecture expert.
+The developer has described a class they want to create:
+
+${description}
+
+Return a GDScript class scaffold formatted as markdown containing:
+- A suggested class name
+- A list of properties with GDScript types and descriptions
+- A list of methods with signatures and descriptions
+- A list of signals with descriptions
+- A complete GDScript code template`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const responseText = completion.choices[0].message.content;
+    res.status(200).json({ result: responseText });
+  } catch (err) {
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+// ── POST /api/game-idea-flesher ───────────────────────────────────────────────
+
+app.post('/api/game-idea-flesher', async (req, res) => {
+  try {
+    const { concept } = req.body;
+
+    if (!concept || concept.trim() === '') {
+      return res.status(400).json({ error: 'concept is required' });
+    }
+
+    const prompt = `You are a Godot game design consultant.
+The developer has described a game concept:
+
+${concept}
+
+Return a structured brainstorm document formatted as markdown with exactly four sections:
+1. Mind Map — a hierarchical outline of themes, mechanics, and entities
+2. UML Diagram — text-based entity/class relationships as a markdown code block
+3. Gameplay Loop — a written description of the core repeating cycle
+4. Suggestions — actionable recommendations for implementing this game in Godot`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const responseText = completion.choices[0].message.content;
+    res.status(200).json({ result: responseText });
+  } catch (err) {
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ error: err.message });
+  }
 });
 
 // ── Global error handler (must be last — 4 arguments) ────────────────────────
