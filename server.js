@@ -52,7 +52,11 @@ app.post('/api/code-help', async (req, res, next) => {
         'You are an expert Godot game developer and GDScript tutor. ' +
         'Provide structured advice focused on Godot game development patterns such as ' +
         'state machines, animation trees, signals, and scene composition. ' +
-        'Format all responses as markdown with clear headings and code examples where relevant.',
+        'Format all responses as markdown with clear headings and code examples where relevant. ' +
+        'At the end of every response, add a section titled "## Games That Use This Pattern" ' +
+        'listing 2–4 real, well-known games that use the same pattern or mechanic the developer ' +
+        'is working on. For each game, write one sentence explaining how it uses the pattern. ' +
+        'This helps the developer visualize the concept in a finished product.',
     };
 
     let messages;

@@ -4,27 +4,18 @@
 
 ## What & Why
 
-Godot Dev Assistant is a web application that gives Godot game developers on-demand AI-powered help in two modes:
+Godot Dev Assistant is a web application that gives Godot game developers on-demand AI-powered help within three modes:
 
-- **Code Help** — paste GDScript code and ask a question; receive structured advice on game development patterns such as state machines, animation trees, signals, and scene composition.
-- **Pixel Art Feedback** — upload a pixel art sprite or tileset and ask a question; receive visual critique and improvement suggestions.
+- ** Code Help** - As someone who asks AI for advice and proper structure whenever buidling a game project, I always want to find the most efficient and professional way. With code help mode, you can input any script code and ask for suggestions to make it better. 
+  
+- **Pixel Art Feedback** - For people who doesn't know color composition , shading or anything related to it, pixel art feedback mode will give you the rough idea on how to make your game art better!
+
+- **Brainstorm** - Game Developers are always coming up with new ideas, through the brainstorm tab, the agent will help you shape these ideas and give you meaningful suggestions!
 
 ### Why this tool?
 
 Godot's documentation is thorough but dense, and developers often need contextual guidance rather than raw reference material. Searching forums or reading through long threads is slow. This tool shortens that loop: a developer pastes their actual code or uploads their actual asset and gets targeted, actionable feedback in seconds.
 
-### Technology choices
-
-| Layer | Technology | Reason |
-|---|---|---|
-| Frontend | Vanilla HTML / CSS / JS | No build step, no framework overhead; the UI is simple enough that React or Vue would add complexity without benefit |
-| Markdown rendering | marked.js (CDN) | Lightweight, zero-config; AI responses are naturally markdown-formatted |
-| Backend | Node.js + Express | Minimal boilerplate for a small REST API; good ecosystem fit for the OpenAI Node SDK |
-| File uploads | multer | De-facto standard Express middleware for multipart/form-data; handles buffering and size limits cleanly |
-| AI model | GPT-4o | Supports both text-only and multimodal (image + text) requests in a single model, which maps directly to the two app modes |
-| Environment config | dotenv | Standard approach for keeping secrets out of source code |
-
----
 
 ## Iterations
 
