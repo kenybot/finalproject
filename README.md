@@ -1,10 +1,11 @@
 # Godot Dev Assistant
 
-An AI-powered web application for Godot game developers. It offers two modes:
+An AI-powered web application for Godot game developers. It offers 3 modes:
 
 - **Code Help** — paste GDScript code and ask a question to receive structured advice on game development patterns (state machines, animation trees, signals, scene composition, and more).
 - **Pixel Art** — upload a pixel art image and ask a question to receive visual feedback and improvement suggestions.
-
+- **Brainstorm** -- write your new idea and it will help you flesh it out!
+- 
 Both modes are powered by GPT-4o and responses are rendered as formatted markdown.
 
 ---
