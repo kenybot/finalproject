@@ -69,3 +69,32 @@ Passed: X / Total: Y | ASR: Z%
 ```
 
 Pixel Art test cases that reference image files not present on disk are automatically skipped and excluded from the pass/fail counts.
+
+---
+
+## Example GD Script Code Snippet
+
+extends Control
+
+
+func _on_play_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/game_scene/game_scene.tscn")
+
+
+func _on_exit_pressed() -> void:
+	get_tree().quit()
+
+
+func _ready():
+	connect_hover_sounds(self)
+
+func connect_hover_sounds(node):
+	for child in node.get_children():
+		if child is Button:
+			child.mouse_entered.connect(self.on_button_hovered)
+		connect_hover_sounds(child)
+
+func on_button_hovered():
+	AuxyAux.play_ui(preload("res://sounds/666herohero-click-21156.mp3"))
+	
+---
